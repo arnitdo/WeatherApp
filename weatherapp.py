@@ -1,11 +1,12 @@
 import json
 import tkinter as tk
-
-from requests import request
+from twilio.rest import Client
 import requests
-
 from weatherservice import WeatherService
 
+ACCOUNT_SID="AC08e6c3064744c325d4594438aa94d09a"
+AUTH_TOKEN="8114d3b02c0633a3f6b66472a41677fa"
+TWILIO_NO="+19895755115"
 WEATHER_API_KEY = "9a11b75df91e4614988120501220806"
 
 class WeatherApp(tk.Tk):
@@ -14,10 +15,12 @@ class WeatherApp(tk.Tk):
 		self.configure(kwargs)
 		self.geometry("480x320")
 		self.weather_service = WeatherService(WEATHER_API_KEY)
+		self.sms_client = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 		self.location_search = tk.Entry(self, width = 20)
 
-		self.search_button = tk.Button(self, width = 17, text = "Search", command = self.onSearchClick)
+		self.search_button = tk.Button(self, width = 8, text = "Search", command = self.onSearchClick)
+		self.sms_button = tk.Button(self, width = 8, text = "Send SMS",  command = self.sendSMS)
 
 		self.weather_icon_image = tk.PhotoImage()
 		self.weather_icon = tk.Label(self, image=self.weather_icon_image)
@@ -34,8 +37,9 @@ class WeatherApp(tk.Tk):
 		self.forecast_max_temp_labels = []
 		self.forecast_humidity_labels = []
 
-		self.location_search.grid(row = 0, column = 0, padx = 10)
-		self.search_button.grid(row = 1, column = 0, padx = 10)
+		self.location_search.grid(row = 0, column = 0, padx = 10, columnspan = 2)
+		self.search_button.grid(row = 1, column = 0, padx = 0)
+		self.sms_button.grid(row = 1, column = 1, padx = 0)
 		self.weather_icon.grid(row = 0, column = 2, rowspan = 2, padx = 10)
 		self.condition_label.grid(row = 0, column = 3, rowspan = 2, padx = 10)
 		self.temperature_label.grid(row = 3, column = 0, rowspan = 2, columnspan = 2, padx = 10, pady = 20)
@@ -44,6 +48,22 @@ class WeatherApp(tk.Tk):
 		self.loadIPData()
 		self.onSearchClick()
 		self.mainloop()
+
+	def sendSMS(self):
+		phone_no = input("Enter phone no : ")
+		location = self.location_search.get()
+		if location.strip() == "":
+			self.loadIPData()
+		weather_data = self.weather_service.getDayReport(location)
+		weather_status = weather_data["condition"]
+
+		weather_status = weather_status.lower()
+
+		self.sms_client.messages.create(
+			body = f"Today's weather forecast for {location} is {weather_status}",
+			from_ = TWILIO_NO,
+			to = f"+91 {phone_no}"
+		)
 
 	def loadIPData(self):
 		city = self.weather_service.getCity()
@@ -93,7 +113,7 @@ class WeatherApp(tk.Tk):
 		self.forecast_humidity_labels = []
 
 		col_idx = 0
-		col_offsets = [0, 2, 3]
+		col_offsets = [1, 2, 3]
 		for day_data in forecast_data:
 			date = day_data["date"]
 			image_route = f"weather/64x64/day/{day_data['image_code']}.png"
