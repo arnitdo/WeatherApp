@@ -16,7 +16,6 @@ class WeatherApp(tk.Tk):
 		self.weather_service = WeatherService(WEATHER_API_KEY)
 
 		self.location_search = tk.Entry(self, width = 20)
-		self.location_search.insert(0, "Mumbai")
 
 		self.search_button = tk.Button(self, width = 17, text = "Search", command = self.onSearchClick)
 
@@ -48,8 +47,7 @@ class WeatherApp(tk.Tk):
 
 	def loadIPData(self):
 		city = self.weather_service.getCity()
-		self.location_search.config(text = city)
-
+		self.location_search.insert(0, city)
 
 	def onSearchClick(self):
 		location = self.location_search.get()
